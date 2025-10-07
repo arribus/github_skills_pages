@@ -1,5 +1,5 @@
 ---
-title: "Radio France API Demo"
+title: "Radio France API"
 date: 2025-10-07
 ---
 
@@ -7,6 +7,6 @@ This post demonstrates how to fetch brands, web radios, and track info using the
 
 You can try it live here:
 
-[Open the demo](/github_skills_pages/index.html){:target="_blank"}
+[Use the API](/github_skills_pages/api/api_radiofrance.html){:target="_blank"}
 
 > Make sure to enter your private `x-api-key` in the input field.
