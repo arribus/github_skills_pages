@@ -7,6 +7,6 @@ This post demonstrates how to fetch brands, web radios, and track info using the
 
 You can try it live here:
 
-[Open the demo](./api-demo/index.html){:target="_blank"}
+[Open the demo](./index.html){:target="_blank"}
 
 > Make sure to enter your private `x-api-key` in the input field.
