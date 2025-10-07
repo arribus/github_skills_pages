@@ -67,6 +67,8 @@
     if (btn) btn.addEventListener('click', clearLog);
     const testBtn = document.getElementById('testConnection');
     if (testBtn) testBtn.addEventListener('click', testConnection);
+    const preBtn = document.getElementById('preflightBtn');
+    if (preBtn) preBtn.addEventListener('click', runPreflight);
   });
 
   // Test backend reachability and CORS by sending a simple request to /brands
@@ -87,6 +89,28 @@
     } catch (err) {
       // network errors and CORS failures surface here as exceptions
       addLogEntry({type: 'error', title: 'Test error', code: url, result: err.message});
+    }
+  }
+
+  // Run an explicit preflight (OPTIONS) request to check CORS preflight response headers.
+  async function runPreflight() {
+    const url = `${getBaseUrl().replace(/\/$/, '')}/brands`;
+    addLogEntry({type: 'info', title: 'Preflight', code: url});
+    try {
+      const res = await fetch(url, {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': window.location.origin,
+          'Access-Control-Request-Method': 'GET',
+          'Access-Control-Request-Headers': 'x-api-key'
+        }
+      });
+      // Collect response headers into an object for display
+      const hdrs = {};
+      for (const pair of res.headers.entries()) hdrs[pair[0]] = pair[1];
+      addLogEntry({type: res.ok ? 'success' : 'error', title: `Preflight ${res.status}`, code: url, result: JSON.stringify(hdrs, null, 2)});
+    } catch (err) {
+      addLogEntry({type: 'error', title: 'Preflight error', code: url, result: err.message});
     }
   }
 
@@ -167,7 +191,8 @@
     }
     showPre('trackOutput', 'Loading track info...');
     try {
-  const url = `${getBaseUrl().replace(/\/$/, '')}/items/${encodeURIComponent(stationId)}`;
+  // Backend exposes /trackinfo?station_id=... (FastAPI wrapper)
+  const url = `${getBaseUrl().replace(/\/$/, '')}/trackinfo?station_id=${encodeURIComponent(stationId)}`;
   const data = await fetchJson(url);
       showPre('trackOutput', data);
     } catch (err) {

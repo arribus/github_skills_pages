@@ -25,10 +25,10 @@
           <input type="text" id="apiKey" name="apiKey" placeholder="Paste API key here" aria-describedby="key-help">
           <label for="keyMode">Send as</label>
           <select id="keyMode" name="keyMode">
-            <option value="x-token" selected>x-token: &lt;key&gt; (Radio France default)</option>
+            <option value="x-api-key" selected>x-api-key: &lt;key&gt; (recommended)</option>
+            <option value="x-token">x-token: &lt;key&gt; (Radio France)</option>
             <option value="none">Don't send</option>
             <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
-            <option value="x-api-key">x-api-key: &lt;key&gt;</option>
           </select>
           <button type="button" data-action="fetchBrands">Get Brands</button>
         </div>
@@ -72,6 +72,7 @@
         <label for="baseUrlInput">Backend base URL</label>
         <input id="baseUrlInput" style="width:60%" type="text" value="https://project-api-fip.onrender.com">
         <button id="testConnection" type="button">Test connection</button>
+        <button id="preflightBtn" type="button">Run Preflight (OPTIONS)</button>
       </div>
       <div class="log" id="executionLog" role="log" aria-live="polite"></div>
     </section>
