@@ -62,6 +62,15 @@
       <p class="lead" style="margin-top:1rem">Tip: If a request returns 404, check your backend routes and the <code>baseUrl</code> defined in <code>api_radiofrance.js</code>.</p>
     </footer>
 
+    <section class="notebook" aria-label="Execution log">
+      <div class="notebook-controls">
+        <strong>Execution log</strong>
+        <button id="clearLog" type="button">Clear log</button>
+        <span class="timestamp" id="logCounter">0 entries</span>
+      </div>
+      <div class="log" id="executionLog" role="log" aria-live="polite"></div>
+    </section>
+
     <script src="./api_radiofrance.js" defer></script>
     <script>
       // Wire buttons to functions exported by the module in a tiny, clear way.

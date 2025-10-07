@@ -13,6 +13,55 @@
     el.textContent = (typeof value === 'string') ? value : JSON.stringify(value, null, 2);
   }
 
+  // Notebook-style logging helpers
+  function addLogEntry({type = 'info', title = '', meta = '', code = '', result = ''}) {
+    const container = document.getElementById('executionLog');
+    if (!container) return;
+    const entry = document.createElement('div');
+    entry.className = `entry ${type}`;
+    const metaEl = document.createElement('div');
+    metaEl.className = 'meta';
+    const ts = new Date().toLocaleTimeString();
+    metaEl.textContent = `${title} `;
+    const tsEl = document.createElement('span');
+    tsEl.className = 'timestamp';
+    tsEl.textContent = ts;
+    metaEl.appendChild(tsEl);
+    const codeEl = document.createElement('div');
+    codeEl.className = 'code';
+    codeEl.textContent = code;
+    const resEl = document.createElement('div');
+    resEl.className = 'result';
+    resEl.textContent = result;
+    entry.appendChild(metaEl);
+    if (code) entry.appendChild(codeEl);
+    if (result) entry.appendChild(resEl);
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
+    updateLogCounter();
+  }
+
+  function clearLog() {
+    const container = document.getElementById('executionLog');
+    if (!container) return;
+    container.innerHTML = '';
+    updateLogCounter();
+  }
+
+  function updateLogCounter() {
+    const container = document.getElementById('executionLog');
+    const counter = document.getElementById('logCounter');
+    if (!counter) return;
+    const n = container ? container.children.length : 0;
+    counter.textContent = `${n} entries`;
+  }
+
+  // wire clear button
+  document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('clearLog');
+    if (btn) btn.addEventListener('click', clearLog);
+  });
+
   // Build headers including API key if the user entered one in the UI
   function buildHeaders() {
     const headers = new Headers();
@@ -40,14 +89,20 @@
 
   async function fetchJson(url) {
     const headers = buildHeaders();
+    // Log request meta before sending
+    addLogEntry({type: 'info', title: 'Request', code: `${url}\nHeaders: ${JSON.stringify(Object.fromEntries(headers.entries()), null, 2)}`});
     const res = await fetch(url, {cache: 'no-store', headers});
     if (!res.ok) {
       // try to include body text when available to help debugging
       let bodyText = '';
       try { bodyText = await res.text(); } catch (e) { /* ignore */ }
-      throw new Error(`${res.status} ${res.statusText}${bodyText ? ' - ' + bodyText : ''}`);
+      const msg = `${res.status} ${res.statusText}${bodyText ? ' - ' + bodyText : ''}`;
+      addLogEntry({type: 'error', title: 'Response error', code: url, result: msg});
+      throw new Error(msg);
     }
-    return res.json();
+    const json = await res.json();
+    addLogEntry({type: 'success', title: 'Response', code: url, result: JSON.stringify(json, null, 2)});
+    return json;
   }
 
   // Public functions used by the HTML via data-action attributes

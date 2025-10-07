@@ -22,3 +22,20 @@ pre{background:var(--panel); padding:1rem; border-radius:6px; overflow:auto}
 section{margin-top:1rem}
 .field-row{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
 .sr-only{position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden}
+
+/* Notebook-like execution log */
+.notebook{
+  margin-top:1.25rem;
+  border-top:1px solid #e6e6e9;
+  padding-top:1rem;
+}
+.notebook-controls{display:flex; gap:.5rem; align-items:center}
+.log{max-height:40vh; overflow:auto; border:1px solid #e8e8ea; background:#fff; padding:0.5rem; border-radius:6px}
+.entry{border-left:3px solid #ddd; padding:0.5rem 0.75rem; margin:0.5rem 0}
+.entry .meta{font-size:.85rem; color:var(--muted); margin-bottom:.25rem}
+.entry .code{background:#f4f6fb; padding:.6rem; border-radius:4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; white-space:pre-wrap}
+.entry .result{background:#f7f7f8; padding:.6rem; border-radius:4px; margin-top:.4rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; white-space:pre-wrap}
+.entry.success{border-left-color: #2b6fb3}
+.entry.error{border-left-color: #c93a3a}
+.entry.info{border-left-color: #6b7280}
+.timestamp{font-size:.75rem; color:var(--muted); margin-left:.5rem}
