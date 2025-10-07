@@ -13,9 +13,40 @@
     el.textContent = (typeof value === 'string') ? value : JSON.stringify(value, null, 2);
   }
 
+  // Build headers including API key if the user entered one in the UI
+  function buildHeaders() {
+    const headers = new Headers();
+    const key = (document.getElementById('apiKey') || {}).value || '';
+    const mode = (document.getElementById('keyMode') || {}).value || 'none';
+    if (!key || mode === 'none') return headers;
+
+    // map known modes to header names/values explicitly
+    switch (mode) {
+      case 'bearer':
+        headers.set('Authorization', `Bearer ${key}`);
+        break;
+      case 'x-api-key':
+        headers.set('x-api-key', key);
+        break;
+      case 'x-token':
+        headers.set('x-token', key);
+        break;
+      default:
+        // fallback: set provided mode as header name
+        headers.set(mode, key);
+    }
+    return headers;
+  }
+
   async function fetchJson(url) {
-    const res = await fetch(url, {cache: 'no-store'});
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const headers = buildHeaders();
+    const res = await fetch(url, {cache: 'no-store', headers});
+    if (!res.ok) {
+      // try to include body text when available to help debugging
+      let bodyText = '';
+      try { bodyText = await res.text(); } catch (e) { /* ignore */ }
+      throw new Error(`${res.status} ${res.statusText}${bodyText ? ' - ' + bodyText : ''}`);
+    }
     return res.json();
   }
 

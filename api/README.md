@@ -1,9 +1,9 @@
-# API Demo: Radio France
+# API Radio France
 
-This folder contains a tiny, beginner-friendly demo that calls the project's Radio France backend.
+This folder contains a tiny, beginner-friendly script that calls the project's Radio France backend.
 
 Files:
-- `api_radiofrance.html` — the demo page (simple HTML, accessible, commented).
+- `api_radiofrance.html` — the script page (simple HTML, accessible, commented).
 - `api_radiofrance.css` — small styles, easy to tweak.
 - `api_radiofrance.js` — fetch logic; edit `baseUrl` here if your backend is hosted elsewhere.
 

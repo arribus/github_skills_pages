@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <!--
   api_radiofrance.html
-  Simple, beginner-friendly demo page to call the project API for Radio France data.
+  Simple, beginner-friendly script page to call the project API for Radio France data.
   Keep changes minimal: update `api_radiofrance.js` for behavior and `api_radiofrance.css` for styles.
 -->
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Radio France API — Demo</title>
+    <title>Radio France API</title>
     <link rel="stylesheet" href="./api_radiofrance.css">
   </head>
   <body>
@@ -21,8 +21,18 @@
       <section aria-labelledby="brands-heading">
         <h2 id="brands-heading">1. Fetch Brands</h2>
         <div class="field-row">
+          <label for="apiKey">API Key</label>
+          <input type="text" id="apiKey" name="apiKey" placeholder="Paste API key here" aria-describedby="key-help">
+          <label for="keyMode">Send as</label>
+          <select id="keyMode" name="keyMode">
+            <option value="x-token" selected>x-token: &lt;key&gt; (Radio France default)</option>
+            <option value="none">Don't send</option>
+            <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
+            <option value="x-api-key">x-api-key: &lt;key&gt;</option>
+          </select>
           <button type="button" data-action="fetchBrands">Get Brands</button>
         </div>
+        <div id="key-help" class="sr-only">If your backend requires an API key, paste it here and choose how it should be sent.</div>
         <pre id="brandsOutput" aria-live="polite"></pre>
       </section>
 
