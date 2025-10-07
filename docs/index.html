@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Radio France demo</title>
+  <style>body{font-family:system-ui,Segoe UI,Arial;margin:20px}textarea{width:100%;height:120px}</style>
+</head>
+<body>
+  <h1>Radio France demo (Netlify + GitHub Pages)</h1>
+  <p>Enter your Netlify function URL (for example: <code>https://harmonious-banoffee-8d5c15.netlify.app/.netlify/functions/radiofrance</code>)</p>
+  <input id="fnUrl" placeholder="https://yoursite.netlify.app/.netlify/functions/radiofrance" style="width:100%" value="https://harmonious-banoffee-8d5c15.netlify.app/.netlify/functions/radiofrance" />
+
+  <h2>Query</h2>
+  <textarea id="query">{ brands { id title } }</textarea>
+  <p>
+    <button id="run">Run query</button>
+    <button id="pretty">Pretty default query</button>
+  </p>
+
+  <h2>Output</h2>
+  <pre id="out">(no result yet)</pre>
+
+  <script>
+    const out = document.getElementById('out');
+    document.getElementById('run').addEventListener('click', async () => {
+      const url = document.getElementById('fnUrl').value.trim();
+      if (!url) return alert('Enter your Netlify function URL');
+      const query = document.getElementById('query').value;
+      out.textContent = 'Loading...';
+      try {
+        const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ query }) });
+        const text = await res.text();
+        try { out.textContent = JSON.stringify(JSON.parse(text), null, 2); } catch(e) { out.textContent = text }
+      } catch (err) {
+        out.textContent = 'Error: ' + err;
+      }
+    });
+    document.getElementById('pretty').addEventListener('click', ()=>{
+      document.getElementById('query').value = `{
+  brands {
+    id
+    title
+  }
+}`
+    })
+  </script>
+</body>
+</html>
