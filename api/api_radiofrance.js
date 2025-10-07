@@ -3,8 +3,13 @@
    - Small helpers and clear error messages make troubleshooting easier
 */
 (function(){
-  // Base URL of your backend. Update this to your deployed Render URL if different.
-  const baseUrl = "https://project-api-fip.onrender.com";
+  // Base URL: default value used if the input is not present. The UI has an editable input so you can test different backends.
+  const defaultBaseUrl = "https://project-api-fip.onrender.com";
+
+  function getBaseUrl() {
+    const el = document.getElementById('baseUrlInput');
+    return (el && el.value) ? el.value.trim() : defaultBaseUrl;
+  }
 
   // Utility: write a value (string or object) to a <pre> by id
   function showPre(id, value) {
@@ -60,7 +65,30 @@
   document.addEventListener('DOMContentLoaded', function () {
     const btn = document.getElementById('clearLog');
     if (btn) btn.addEventListener('click', clearLog);
+    const testBtn = document.getElementById('testConnection');
+    if (testBtn) testBtn.addEventListener('click', testConnection);
   });
+
+  // Test backend reachability and CORS by sending a simple request to /brands
+  async function testConnection() {
+    const url = `${getBaseUrl().replace(/\/$/, '')}/brands`;
+    addLogEntry({type: 'info', title: 'Test connection', code: url});
+    try {
+      const headers = buildHeaders();
+      const res = await fetch(url, {method: 'GET', headers});
+      if (!res.ok) {
+        let body = '';
+        try { body = await res.text(); } catch (e) {}
+        addLogEntry({type: 'error', title: 'Test failed', code: url, result: `${res.status} ${res.statusText} ${body}`});
+        return;
+      }
+      const json = await res.json();
+      addLogEntry({type: 'success', title: 'Test success', code: url, result: JSON.stringify(json, null, 2)});
+    } catch (err) {
+      // network errors and CORS failures surface here as exceptions
+      addLogEntry({type: 'error', title: 'Test error', code: url, result: err.message});
+    }
+  }
 
   // Build headers including API key if the user entered one in the UI
   function buildHeaders() {
@@ -109,7 +137,7 @@
   async function fetchBrands() {
     showPre('brandsOutput', 'Loading brands...');
     try {
-      const data = await fetchJson(`${baseUrl}/brands`);
+      const data = await fetchJson(`${getBaseUrl().replace(/\/$/, '')}/brands`);
       showPre('brandsOutput', data);
     } catch (err) {
       showPre('brandsOutput', `Error fetching /brands: ${err.message}.\nCheck that the backend is running and that CORS allows this page.`);
@@ -124,7 +152,7 @@
     }
     showPre('webradiosOutput', 'Loading web radios...');
     try {
-      const data = await fetchJson(`${baseUrl}/webradios?brand_id=${encodeURIComponent(brandId)}`);
+  const data = await fetchJson(`${getBaseUrl().replace(/\/$/, '')}/webradios?brand_id=${encodeURIComponent(brandId)}`);
       showPre('webradiosOutput', data);
     } catch (err) {
       showPre('webradiosOutput', `Error fetching /webradios: ${err.message}.\nIf you see 404, ensure your backend exposes GET /webradios or update baseUrl.`);
@@ -139,8 +167,8 @@
     }
     showPre('trackOutput', 'Loading track info...');
     try {
-      const url = `${baseUrl}/items/${encodeURIComponent(stationId)}`;
-      const data = await fetchJson(url);
+  const url = `${getBaseUrl().replace(/\/$/, '')}/items/${encodeURIComponent(stationId)}`;
+  const data = await fetchJson(url);
       showPre('trackOutput', data);
     } catch (err) {
       showPre('trackOutput', `Error fetching track info: ${err.message}.\nCheck backend routes and CORS.`);
