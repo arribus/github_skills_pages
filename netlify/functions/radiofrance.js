@@ -1,9 +1,20 @@
 const fetch = require('node-fetch');
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
 exports.handler = async function (event, context) {
+  // Respond to preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
+  }
+
   const API_KEY = process.env.API_KEY;
   if (!API_KEY) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'API_KEY not configured in Netlify environment' }) };
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'API_KEY not configured in Netlify environment' }) };
   }
 
   const body = event.body || '';
@@ -18,8 +29,8 @@ exports.handler = async function (event, context) {
       body,
     });
     const text = await res.text();
-    return { statusCode: res.status, body: text };
+    return { statusCode: res.status, headers: CORS_HEADERS, body: text };
   } catch (err) {
-    return { statusCode: 502, body: JSON.stringify({ error: String(err) }) };
+    return { statusCode: 502, headers: CORS_HEADERS, body: JSON.stringify({ error: String(err) }) };
   }
 };
