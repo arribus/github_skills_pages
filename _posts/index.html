@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Radio France API Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    button { margin: 0.5em 0; padding: 0.5em 1em; }
+    select { padding: 0.3em; margin-left: 0.5em; }
+    pre { background: #f0f0f0; padding: 1em; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Radio France API Demo</h1>
+
+  <label>API Key: <input type="text" id="apiKey" placeholder="Enter your API key" size="36"></label>
+
+  <h2>1️⃣ Fetch Brands</h2>
+  <button onclick="fetchBrands()">Get Brands</button>
+  <pre id="brandsOutput"></pre>
+
+  <h2>2️⃣ Fetch Web Radios</h2>
+  <label>Brand ID: <input type="text" id="brandId" placeholder="e.g. FIP"></label>
+  <button onclick="fetchWebRadios()">Get Web Radios</button>
+  <pre id="webradiosOutput"></pre>
+
+  <h2>3️⃣ Get Track Info</h2>
+  <label>Station ID: <input type="text" id="stationId" placeholder="e.g. FIP_ROCK"></label>
+  <button onclick="fetchTrackInfo()">Get Track Info</button>
+  <pre id="trackOutput"></pre>
+
+  <script>
+    const baseUrl = "https://project-api-fip.onrender.com";
+
+    async function fetchBrands() {
+      const key = document.getElementById("apiKey").value;
+      const res = await fetch(`${baseUrl}/brands`, {
+        headers: { "x-api-key": key }
+      });
+      const data = await res.json();
+      document.getElementById("brandsOutput").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function fetchWebRadios() {
+      const key = document.getElementById("apiKey").value;
+      const brandId = document.getElementById("brandId").value;
+      const res = await fetch(`${baseUrl}/webradios?brand_id=${brandId}`, {
+        headers: { "x-api-key": key }
+      });
+      const data = await res.json();
+      document.getElementById("webradiosOutput").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function fetchTrackInfo() {
+      const key = document.getElementById("apiKey").value;
+      const stationId = document.getElementById("stationId").value;
+      const res = await fetch(`${baseUrl}/trackinfo?station_id=${stationId}`, {
+        headers: { "x-api-key": key }
+      });
+      const data = await res.json();
+      document.getElementById("trackOutput").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
