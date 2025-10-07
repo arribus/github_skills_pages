@@ -1,65 +1,72 @@
 <!DOCTYPE html>
+<!--
+  api_radiofrance.html
+  Simple, beginner-friendly demo page to call the project API for Radio France data.
+  Keep changes minimal: update `api_radiofrance.js` for behavior and `api_radiofrance.css` for styles.
+-->
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Radio France API Demo</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    button { margin: 0.5em 0; padding: 0.5em 1em; }
-    select { padding: 0.3em; margin-left: 0.5em; }
-    pre { background: #f0f0f0; padding: 1em; overflow-x: auto; }
-  </style>
-</head>
-<body>
-  <h1>Radio France API Demo</h1>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Radio France API — Demo</title>
+    <link rel="stylesheet" href="./api_radiofrance.css">
+  </head>
+  <body>
+    <header>
+      <h1>Radio France API</h1>
+      <p class="lead"><em>Note:</em> When using the Render backend the API key is injected server-side. Avoid calling the Radio France API directly from the browser in production.</p>
+    </header>
 
-  <label>API Key: <input type="text" id="apiKey" placeholder="Enter your API key" size="36"></label>
+    <main>
+      <section aria-labelledby="brands-heading">
+        <h2 id="brands-heading">1. Fetch Brands</h2>
+        <div class="field-row">
+          <button type="button" data-action="fetchBrands">Get Brands</button>
+        </div>
+        <pre id="brandsOutput" aria-live="polite"></pre>
+      </section>
 
-  <h2>1️⃣ Fetch Brands</h2>
-  <button onclick="fetchBrands()">Get Brands</button>
-  <pre id="brandsOutput"></pre>
+      <section aria-labelledby="webradios-heading">
+        <h2 id="webradios-heading">2. Fetch Web Radios</h2>
+        <div class="field-row">
+          <label for="brandId">Brand ID</label>
+          <input type="text" id="brandId" name="brandId" placeholder="e.g. FIP" aria-describedby="brand-help">
+          <button type="button" data-action="fetchWebRadios">Get Web Radios</button>
+        </div>
+        <div id="brand-help" class="sr-only">Enter a brand identifier such as FIP</div>
+        <pre id="webradiosOutput" aria-live="polite"></pre>
+      </section>
 
-  <h2>2️⃣ Fetch Web Radios</h2>
-  <label>Brand ID: <input type="text" id="brandId" placeholder="e.g. FIP"></label>
-  <button onclick="fetchWebRadios()">Get Web Radios</button>
-  <pre id="webradiosOutput"></pre>
+      <section aria-labelledby="track-heading">
+        <h2 id="track-heading">3. Get Track Info</h2>
+        <div class="field-row">
+          <label for="stationId">Station ID</label>
+          <input type="text" id="stationId" name="stationId" placeholder="e.g. FIP_ROCK">
+          <button type="button" data-action="fetchTrackInfo">Get Track Info</button>
+        </div>
+        <pre id="trackOutput" aria-live="polite"></pre>
+      </section>
+    </main>
 
-  <h2>3️⃣ Get Track Info</h2>
-  <label>Station ID: <input type="text" id="stationId" placeholder="e.g. FIP_ROCK"></label>
-  <button onclick="fetchTrackInfo()">Get Track Info</button>
-  <pre id="trackOutput"></pre>
+    <footer>
+      <p class="lead" style="margin-top:1rem">Tip: If a request returns 404, check your backend routes and the <code>baseUrl</code> defined in <code>api_radiofrance.js</code>.</p>
+    </footer>
 
-  <script>
-    const baseUrl = "https://project-api-fip.onrender.com";
-
-    async function fetchBrands() {
-      const key = document.getElementById("apiKey").value;
-      const res = await fetch(`${baseUrl}/brands`, {
-        headers: { "x-api-key": key }
+    <script src="./api_radiofrance.js" defer></script>
+    <script>
+      // Wire buttons to functions exported by the module in a tiny, clear way.
+      document.addEventListener('DOMContentLoaded', function () {
+        const map = {
+          fetchBrands: window.ApiRadioFrance && window.ApiRadioFrance.fetchBrands,
+          fetchWebRadios: window.ApiRadioFrance && window.ApiRadioFrance.fetchWebRadios,
+          fetchTrackInfo: window.ApiRadioFrance && window.ApiRadioFrance.fetchTrackInfo
+        };
+        document.querySelectorAll('button[data-action]').forEach(btn => {
+          const name = btn.getAttribute('data-action');
+          const fn = map[name];
+          if (typeof fn === 'function') btn.addEventListener('click', fn);
+        });
       });
-      const data = await res.json();
-      document.getElementById("brandsOutput").textContent = JSON.stringify(data, null, 2);
-    }
-
-    async function fetchWebRadios() {
-      const key = document.getElementById("apiKey").value;
-      const brandId = document.getElementById("brandId").value;
-      const res = await fetch(`${baseUrl}/webradios?brand_id=${brandId}`, {
-        headers: { "x-api-key": key }
-      });
-      const data = await res.json();
-      document.getElementById("webradiosOutput").textContent = JSON.stringify(data, null, 2);
-    }
-
-    async function fetchTrackInfo() {
-      const key = document.getElementById("apiKey").value;
-      const stationId = document.getElementById("stationId").value;
-      const res = await fetch(`${baseUrl}/trackinfo?station_id=${stationId}`, {
-        headers: { "x-api-key": key }
-      });
-      const data = await res.json();
-      document.getElementById("trackOutput").textContent = JSON.stringify(data, null, 2);
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
