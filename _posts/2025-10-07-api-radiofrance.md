@@ -7,6 +7,6 @@ This post demonstrates how to fetch brands, web radios, and track info using the
 
 You can try it live here:
 
-[Use the API](/github_skills_pages/api/api_radiofrance.html){:target="_blank"}
+[Use the API]({{ site.baseurl }}/api/api_radiofrance.html){:target="_blank"}
 
 > Make sure to enter your private `x-api-key` in the input field.
