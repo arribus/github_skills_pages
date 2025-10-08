@@ -27,38 +27,38 @@ Date:
     </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Reso M — Grenoble Transport Explorer</h1>
-    <p>A tiny, beginner-friendly demo that lists lines, stops and next realtime times.</p>
+<div class="box">
+  <h1>Reso M — Grenoble Transport Explorer</h1>
+  <p>A tiny, beginner-friendly demo that lists lines, stops and next realtime times.</p>
 
-      <div>
-        <label for="modes">1) Choose a mode</label>
-        <select id="modes"><option value="">Loading modes…</option></select>
-      </div>
-
-      <div>
-        <label for="types">2) Choose a type</label>
-        <select id="types" disabled><option value="">Select a mode first</option></select>
-      </div>
-
-      <div>
-        <label for="lines">3) Choose a line</label>
-        <select id="lines" disabled><option value="">Select a type first</option></select>
-      </div>
-
-    <div>
-      <label for="stops">2) Choose a stop</label>
-      <select id="stops" disabled><option value="">Select a line first</option></select>
-    </div>
-
-    <div>
-      <button id="showTimes" disabled>3) Show next times</button>
-    </div>
-
-    <h3>Results</h3>
-    <div id="now">Current time: <strong id="currentTime">--:--:--</strong></div>
-    <div id="result">Make selections above to see results.</div>
+  <div>
+    <label for="modes">1) Choose a mode</label>
+    <select id="modes"><option value="">Loading modes…</option></select>
   </div>
+
+  <div>
+    <label for="types">2) Choose a type</label>
+    <select id="types" disabled><option value="">Select a mode first</option></select>
+  </div>
+
+  <div>
+    <label for="lines">3) Choose a line</label>
+    <select id="lines" disabled><option value="">Select a type first</option></select>
+  </div>
+
+  <div>
+    <label for="stops">2) Choose a stop</label>
+    <select id="stops" disabled><option value="">Select a line first</option></select>
+  </div>
+
+  <div>
+    <button id="showTimes" disabled>3) Show next times</button>
+  </div>
+
+  <h3>Results</h3>
+  <div id="now">Current time: <strong id="currentTime">--:--:--</strong></div>
+  <div id="result">Make selections above to see results.</div>
+</div>
 
   <script>
   // Small helper to set innerText safely
@@ -392,4 +392,3 @@ Date:
   </script>
 </body>
 </html>
-
