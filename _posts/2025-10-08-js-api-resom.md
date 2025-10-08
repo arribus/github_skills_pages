@@ -10,25 +10,28 @@ Date:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Reso M — Grenoble Transport Explorer</title>
-    <style>
-     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; margin: 24px; color:#111 }
-     h1 { font-size: 20px }
-     .box { max-width:720px; padding:16px; border:1px solid #eee; border-radius:8px; background:#fafafa }
-     label, select, button { display:block; margin-top:8px }
-     pre { background:#111; color:#eee; padding:10px; border-radius:6px; overflow:auto }
-     table { width:100%; border-collapse: collapse; margin-top:8px }
-     th, td { text-align:left; padding:8px; border-bottom:1px solid #eee; vertical-align:middle }
-     th { background:#fafafa; font-weight:600 }
-     small.timeLabel { color:#666; display:block }
-     .delay-good { color: #0a0; font-weight:600 }
-     .delay-warning { color: #b65; font-weight:600 }
-     .delay-bad { color: #c00; font-weight:700 }
-     .occupancy { font-size:90%; color:#333 }
-    </style>
+  <style>
+   :root{--bg:#ffffff;--panel:#fafafa;--text:#111;--muted:#666;--accent:#0078d4;--border:#eee;--good:#0a0;--warn:#b65;--bad:#c00}
+   [data-theme="dark"]{--bg:#0b0b0d;--panel:#0f1113;--text:#e6eef8;--muted:#9aa6b2;--accent:#89c2ff;--border:#222;--good:#4dd06b;--warn:#f0a75b;--bad:#ff6b6b}
+   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; margin: 24px; color:var(--text); background:var(--bg) }
+   h1 { font-size: 20px }
+   .box { max-width:720px; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--panel) }
+   label, select, button { display:block; margin-top:8px }
+   pre { background:#111; color:#eee; padding:10px; border-radius:6px; overflow:auto }
+   table { width:100%; border-collapse: collapse; margin-top:8px }
+   th, td { text-align:left; padding:8px; border-bottom:1px solid var(--border); vertical-align:middle }
+   th { background:var(--panel); font-weight:600 }
+   small.timeLabel { color:var(--muted); display:block }
+   .delay-good { color: var(--good); font-weight:600 }
+   .delay-warning { color: var(--warn); font-weight:600 }
+   .delay-bad { color: var(--bad); font-weight:700 }
+   .occupancy { font-size:90%; color:var(--text) }
+   .theme-toggle { position: absolute; right: 28px; top: 20px; background:transparent; border:0; cursor:pointer; color:var(--muted); font-size:16px }
+  </style>
 </head>
 <body>
 <div class="box">
-  <h1>Reso M — Grenoble Transport Explorer</h1>
+  <h1>Reso M — Grenoble Transport Explorer <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button></h1>
   <p>A tiny, beginner-friendly demo that lists lines, stops and next realtime times.</p>
 
   <div>
@@ -74,6 +77,7 @@ Date:
     const stopsSelect = el('stops');
     const showBtn = el('showTimes');
     const result = el('result');
+    const themeToggle = el('themeToggle');
       // current time element and live clock (start immediately)
       const currentTimeEl = el('currentTime');
       function updateCurrentTime() {
@@ -389,6 +393,24 @@ Date:
   loadLines().catch(err => {
     result.textContent = 'Failed to load lines — open console for details.';
   });
+
+  // Theme toggle logic (persist in localStorage)
+  (function(){
+    const key = 'rm_demo_theme';
+    const root = document.documentElement;
+    function applyTheme(t){
+      if (t === 'dark') root.setAttribute('data-theme','dark');
+      else root.removeAttribute('data-theme');
+      if (themeToggle) themeToggle.textContent = t === 'dark' ? '🌙' : '☀️';
+    }
+    const saved = localStorage.getItem(key);
+    applyTheme(saved === 'dark' ? 'dark' : 'light');
+    if (themeToggle) themeToggle.addEventListener('click', ()=>{
+      const now = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(key, now);
+      applyTheme(now);
+    });
+  })();
   </script>
 </body>
 </html>
