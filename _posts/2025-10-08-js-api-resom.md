@@ -144,13 +144,20 @@ Date:
 		 const params = routeId ? `?route=${encodeURIComponent(routeId)}` : '';
 		 const url = `${BASE}/stops/${encodeURIComponent(stopId)}/stoptimes${params}`;
 
-		 // For modern browsers fetch will include Origin header automatically. We don't need to manually add it.
-		 const data = await fetchJson(url);
+			// For modern browsers fetch will include Origin header automatically. We don't need to manually add it.
+			let data = await fetchJson(url);
 
-		 if (!Array.isArray(data) || data.length === 0) {
-			 result.innerHTML = '<em>No upcoming times found.</em>';
-			 return;
-		 }
+			// Some API responses return an array of 'pattern' objects where each contains a 'times' array
+			// (see the example you provided). Normalize so we always have an array of time entries.
+			if (Array.isArray(data) && data.length > 0 && data[0].times && Array.isArray(data[0].times)) {
+				// flatten all times arrays from each pattern
+				data = data.flatMap(p => p.times || []);
+			}
+
+			if (!Array.isArray(data) || data.length === 0) {
+				result.innerHTML = '<em>No upcoming times found.</em>';
+				return;
+			}
 
 		 // Build a small HTML table of upcoming times
 			const rows = data.slice(0, 20).map(item => {
