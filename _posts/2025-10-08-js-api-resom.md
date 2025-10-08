@@ -55,8 +55,9 @@ Date:
 			 <button id="showTimes" disabled>3) Show next times</button>
 		 </div>
 
-		 <h3>Results</h3>
-		 <div id="result">Make selections above to see results.</div>
+		<h3>Results</h3>
+		<div id="now">Current time: <strong id="currentTime">--:--:--</strong></div>
+		<div id="result">Make selections above to see results.</div>
 	 </div>
 
 	 <script>
@@ -227,7 +228,7 @@ Date:
 			}
 
 			// Build a small HTML table of upcoming times with clear columns
-			function formatDelaySeconds(d) {
+				function formatDelaySeconds(d) {
 				if (d === 0) return 'On time';
 				const sign = d > 0 ? '+' : '-';
 				const abs = Math.abs(d);
@@ -242,10 +243,39 @@ Date:
 				return 'delay-bad';
 			}
 
-			const rows = data.slice(0, 50).map(item => {
+				// current time display and helper to format "from now"
+				const currentTimeEl = document.getElementById('currentTime');
+				function updateCurrentTime() {
+					const now = new Date();
+					currentTimeEl.textContent = now.toLocaleTimeString();
+				}
+				// call once and every second to keep the clock updated
+				updateCurrentTime();
+				setInterval(updateCurrentTime, 1000);
+
+				function formatFromNow(msDelta) {
+					// msDelta = arrivalMs - nowMs
+					const s = Math.round(Math.abs(msDelta) / 1000);
+					const m = Math.floor(s / 60);
+					const sec = s % 60;
+					if (msDelta > 0) {
+						if (m > 0) return `in ${m}m${sec}s`;
+						return `in ${sec}s`;
+					} else if (msDelta < 0) {
+						if (m > 0) return `${m}m${sec}s ago`;
+						return `${sec}s ago`;
+					}
+					return 'now';
+				}
+
+				const rows = data.slice(0, 50).map(item => {
 				const sd = Number(item.serviceDay) || 0;
 				const scheduledSec = typeof item.scheduledArrival !== 'undefined' ? Number(item.scheduledArrival) : null;
 				const realtimeSec = typeof item.realtimeArrival !== 'undefined' ? Number(item.realtimeArrival) : null;
+					const arrivalSec = realtimeSec !== null ? realtimeSec : scheduledSec;
+					const nowMs = Date.now();
+					const arrivalMs = (arrivalSec !== null) ? (sd + arrivalSec) * 1000 : null;
+					const fromNow = (arrivalMs !== null) ? formatFromNow(arrivalMs - nowMs) : 'n/a';
 
 				function toTimeString(sec) {
 					if (sec === null || typeof sec === 'undefined') return 'n/a';
@@ -267,22 +297,23 @@ Date:
 				const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
 				const occupancy = item.occupancy || (item.occupancyId ? `lvl:${item.occupancyId}` : '') || '';
 
-				return `<tr>
-					<td><div><small class="timeLabel">Scheduled</small><strong>${scheduledTime}</strong></div></td>
-					<td><div><small class="timeLabel">Realtime</small><strong>${realtimeTime}</strong></div></td>
-					<td class="${delayCss}">${delayText}</td>
-					<td>${route}</td>
-					<td>${headsign}</td>
-					<td class="occupancy">${occupancy}</td>
-				</tr>`;
+						return `<tr>
+							<td><div><small class="timeLabel">Scheduled</small><strong>${scheduledTime}</strong></div></td>
+							<td><div><small class="timeLabel">Realtime</small><strong>${realtimeTime}</strong></div></td>
+							<td>${fromNow}</td>
+							<td class="${delayCss}">${delayText}</td>
+							<td>${route}</td>
+							<td>${headsign}</td>
+							<td class="occupancy">${occupancy}</td>
+						</tr>`;
 			}).join('');
 
-			result.innerHTML = `
-				<table>
-					<thead><tr><th>Scheduled</th><th>Realtime</th><th>Delay</th><th>Route</th><th>Direction</th><th>Occupancy</th></tr></thead>
-					<tbody>${rows}</tbody>
-				</table>
-			`;
+					result.innerHTML = `
+						<table>
+							<thead><tr><th>Scheduled</th><th>Realtime</th><th>From now</th><th>Delay</th><th>Route</th><th>Direction</th><th>Occupancy</th></tr></thead>
+							<tbody>${rows}</tbody>
+						</table>
+					`;
 	 }
 
 	 // Event wiring
