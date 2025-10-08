@@ -74,6 +74,14 @@ Date:
 	 const stopsSelect = el('stops');
 	 const showBtn = el('showTimes');
 	 const result = el('result');
+		 // current time element and live clock (start immediately)
+		 const currentTimeEl = el('currentTime');
+		 function updateCurrentTime() {
+			 const now = new Date();
+			 if (currentTimeEl) currentTimeEl.textContent = now.toLocaleTimeString();
+		 }
+		 updateCurrentTime();
+		 setInterval(updateCurrentTime, 1000);
 
 	 // Populate an option element
 	 function addOption(select, value, text) {
@@ -242,16 +250,6 @@ Date:
 				if (d <= 120) return 'delay-warning';
 				return 'delay-bad';
 			}
-
-				// current time display and helper to format "from now"
-				const currentTimeEl = document.getElementById('currentTime');
-				function updateCurrentTime() {
-					const now = new Date();
-					currentTimeEl.textContent = now.toLocaleTimeString();
-				}
-				// call once and every second to keep the clock updated
-				updateCurrentTime();
-				setInterval(updateCurrentTime, 1000);
 
 				function formatFromNow(msDelta) {
 					// msDelta = arrivalMs - nowMs
