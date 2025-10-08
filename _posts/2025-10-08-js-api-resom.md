@@ -53,10 +53,20 @@ Date:
 		 <h1>Reso M — Grenoble Transport Explorer</h1>
 		 <p>A tiny, beginner-friendly demo that lists lines, stops and next realtime times.</p>
 
-		 <div>
-			 <label for="lines">1) Choose a line</label>
-			 <select id="lines"><option value="">Loading lines…</option></select>
-		 </div>
+			<div>
+				<label for="modes">1) Choose a mode</label>
+				<select id="modes"><option value="">Loading modes…</option></select>
+			</div>
+
+			<div>
+				<label for="types">2) Choose a type</label>
+				<select id="types" disabled><option value="">Select a mode first</option></select>
+			</div>
+
+			<div>
+				<label for="lines">3) Choose a line</label>
+				<select id="lines" disabled><option value="">Select a type first</option></select>
+			</div>
 
 		 <div>
 			 <label for="stops">2) Choose a stop</label>
@@ -79,7 +89,9 @@ Date:
 	 const BASE = 'https://data.mobilites-m.fr/api/routers/default/index';
 
 	 // DOM elements
-	 const linesSelect = el('lines');
+		const modesSelect = el('modes');
+		const typesSelect = el('types');
+		const linesSelect = el('lines');
 	 const stopsSelect = el('stops');
 	 const showBtn = el('showTimes');
 	 const result = el('result');
@@ -105,23 +117,90 @@ Date:
 	 }
 
 	 // 1) Load lines and populate the lines select
-	 async function loadLines() {
-		 linesSelect.innerHTML = '';
-		 addOption(linesSelect, '', 'Choose a line');
-		 result.textContent = 'Loading lines…';
+		 // We'll fetch routes once, then build grouped structures by mode -> type -> routes
+		 let routesByMode = {}; // { mode: { type: [route, ...] } }
 
-		 const url = `${BASE}/routes`;
-		 const data = await fetchJson(url);
+		 async function loadLines() {
+			 modesSelect.innerHTML = '';
+			 addOption(modesSelect, '', 'Choose a mode');
+			 result.textContent = 'Loading lines…';
 
-		 // API returns an array of route objects. We'll use id/code and shortName or longName to display.
-		 data.sort((a,b) => (a.shortName||a.id||'').localeCompare(b.shortName||b.id||''));
-		 data.forEach(route => {
-			 const display = route.shortName ? `${route.shortName} — ${route.longName || ''}`.trim() : (route.id || '');
-			 addOption(linesSelect, route.id, display);
+			 const url = `${BASE}/routes`;
+			 const data = await fetchJson(url);
+
+			 // Group routes by mode then type
+			 routesByMode = {};
+			 data.forEach(route => {
+				 const mode = route.mode || 'OTHER';
+				 const type = route.type || 'OTHER';
+				 routesByMode[mode] = routesByMode[mode] || {};
+				 routesByMode[mode][type] = routesByMode[mode][type] || [];
+				 routesByMode[mode][type].push(route);
+			 });
+
+			 // Populate modes select
+			 const modes = Object.keys(routesByMode).sort();
+			 modes.forEach(m => addOption(modesSelect, m, m));
+
+			 // disable dependent selects until chosen
+			 typesSelect.innerHTML = '';
+			 addOption(typesSelect, '', 'Select a mode first');
+			 typesSelect.disabled = true;
+
+			 linesSelect.innerHTML = '';
+			 addOption(linesSelect, '', 'Select a type first');
+			 linesSelect.disabled = true;
+
+			 result.textContent = 'Modes loaded. Pick a mode.';
+		 }
+
+		 // when a mode is chosen, populate types
+		 modesSelect.addEventListener('change', () => {
+			 const mode = modesSelect.value;
+			 typesSelect.innerHTML = '';
+			 addOption(typesSelect, '', 'Choose a type');
+			 linesSelect.innerHTML = '';
+			 addOption(linesSelect, '', 'Select a type first');
+			 linesSelect.disabled = true;
+			 showBtn.disabled = true;
+
+			 if (!mode) {
+				 typesSelect.disabled = true;
+				 result.textContent = 'Pick a mode.';
+				 return;
+			 }
+
+			 const types = Object.keys(routesByMode[mode] || {}).sort();
+			 types.forEach(t => addOption(typesSelect, t, t));
+			 typesSelect.disabled = false;
+			 result.textContent = `Types for ${mode} loaded. Pick a type.`;
 		 });
 
-		 result.textContent = 'Lines loaded. Pick a line.';
-	 }
+		 // when a type is chosen, populate lines
+		 typesSelect.addEventListener('change', () => {
+			 const mode = modesSelect.value;
+			 const type = typesSelect.value;
+			 linesSelect.innerHTML = '';
+			 addOption(linesSelect, '', 'Choose a line');
+			 showBtn.disabled = true;
+
+			 if (!type) {
+				 linesSelect.disabled = true;
+				 result.textContent = 'Pick a type.';
+				 return;
+			 }
+
+			 const list = (routesByMode[mode] && routesByMode[mode][type]) || [];
+			 // sort by shortName then id, then populate
+			 list.sort((a,b) => (a.shortName||a.id||'').localeCompare(b.shortName||b.id||''));
+			 list.forEach(route => {
+				 const display = route.shortName ? `${route.shortName} — ${route.longName || ''}`.trim() : (route.id || '');
+				 addOption(linesSelect, route.id, display);
+			 });
+
+			 linesSelect.disabled = false;
+			 result.textContent = 'Lines loaded. Pick a line.';
+		 });
 
 	 // 2) When a line is picked, load stops for that line
 	 async function loadStopsForLine(lineId) {
