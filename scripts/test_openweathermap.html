@@ -14,6 +14,8 @@
     <p>
       <label for="city">City:</label>
       <input id="city" placeholder="Insert a city" />
+      <label for="country">Country code (optional):</label>
+      <input id="country" placeholder="e.g. FR" style="width:4em" />
       <button id="fetch-weather">Get weather</button>
     </p>
 
@@ -59,8 +61,30 @@
             const description = data.weather?.[0]?.description;
             const location = data.name;
 
-            outputElement.innerHTML = `<p>Temperature in ${location}: ${temperature}°C</p>` +
-                                      `<p>Weather: ${description}</p>`;
+            // Build the human output
+            let html = `<p>Temperature in ${location}: ${temperature}°C</p>` +
+                       `<p>Weather: ${description}</p>`;
+
+            // Additional metadata to help debug location mismatch
+            const coord = data.coord;
+            const cityId = data.id;
+            const country = data.sys?.country;
+            const dt = data.dt; // unix time (UTC)
+            const tz = data.timezone; // shift in seconds from UTC
+
+            html += `<p>Location: ${location}${country ? (', ' + country) : ''} (id: ${cityId})</p>`;
+            if (coord) html += `<p>Coordinates: ${coord.lat}, ${coord.lon}</p>`;
+            if (typeof dt === 'number') {
+              // Show UTC and local time at the location (approx)
+              const utc = new Date(dt * 1000).toISOString();
+              const localAtLocation = new Date((dt + (tz || 0)) * 1000).toISOString();
+              html += `<p>Timestamp (UTC): ${utc}</p>` +
+                      `<p>Timestamp (local at location): ${localAtLocation} (tz offset: ${tz || 0}s)</p>`;
+            }
+
+            outputElement.innerHTML = html + '\n<details><summary>Raw API response (click to expand)</summary><pre id="raw-json" style="max-height:400px;overflow:auto;background:#f6f8fa;padding:8px;border-radius:4px"></pre></details>';
+            const rawPre = document.getElementById('raw-json');
+            rawPre.textContent = JSON.stringify(data, null, 2);
           } catch (err) {
             console.error(err);
             outputElement.textContent = 'Network error, see console for details.';
