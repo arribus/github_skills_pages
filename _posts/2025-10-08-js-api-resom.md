@@ -225,12 +225,12 @@ Date:
 			// For modern browsers fetch will include Origin header automatically. We don't need to manually add it.
 			let data = await fetchJson(url);
 
-			// Some API responses return an array of 'pattern' objects where each contains a 'times' array
-			// (see the example you provided). Normalize so we always have an array of time entries.
-			if (Array.isArray(data) && data.length > 0 && data[0].times && Array.isArray(data[0].times)) {
-				// flatten all times arrays from each pattern
-				data = data.flatMap(p => p.times || []);
-			}
+				// Some API responses return an array of 'pattern' objects where each contains a 'times' array
+				// Normalize so we always have an array of time entries. Preserve pattern.desc and pattern.dir
+				if (Array.isArray(data) && data.length > 0 && data[0].times && Array.isArray(data[0].times)) {
+					// flatten all times arrays from each pattern and attach pattern info to each time entry
+					data = data.flatMap(p => (p.times || []).map(t => ({ ...t, _patternDesc: p.pattern && p.pattern.desc, _patternDir: p.pattern && p.pattern.dir })));
+				}
 
 			if (!Array.isArray(data) || data.length === 0) {
 				result.innerHTML = '<em>No upcoming times found.</em>';
@@ -268,7 +268,7 @@ Date:
 					return 'now';
 				}
 
-					// Sort entries by their computed arrival timestamp (serviceDay + arrival seconds)
+						// Sort entries by their computed arrival timestamp (serviceDay + arrival seconds)
 					data.sort((a,b) => {
 						const aSd = Number(a.serviceDay) || 0;
 						const bSd = Number(b.serviceDay) || 0;
@@ -302,24 +302,43 @@ Date:
 					delayCss = delayClass(d);
 				}
 
-				const route = item.route || (item.trip && item.trip.routeId) || '';
-				const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
+						// Determine the line display (try the selected routeId, then trip.routeId)
+						const routeIdFromItem = routeId || item.route || (item.trip && item.trip.routeId) || '';
+						// lookup shortName from routesByMode for nicer display
+						let routeDisplay = routeIdFromItem;
+						if (routeIdFromItem) {
+							outer: for (const m of Object.keys(routesByMode)) {
+								for (const t of Object.keys(routesByMode[m] || {})) {
+									for (const r of routesByMode[m][t]) {
+										if (r.id === routeIdFromItem || r.gtfsId === routeIdFromItem) {
+											routeDisplay = r.shortName || r.id || routeIdFromItem;
+											break outer;
+										}
+									}
+								}
+							}
+						}
+
+						const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
+						// pattern info (destination)
+						const patternDesc = item._patternDesc || '';
+						const patternDir = (typeof item._patternDir !== 'undefined') ? item._patternDir : (item.dir || '');
 				const occupancy = item.occupancy || (item.occupancyId ? `lvl:${item.occupancyId}` : '') || '';
 
 						return `<tr>
 							<td><div><small class="timeLabel">Scheduled</small><strong>${scheduledTime}</strong></div></td>
 							<td><div><small class="timeLabel">Realtime</small><strong>${realtimeTime}</strong></div></td>
 						<td class="fromNow" data-arrival-ms="${arrivalMs}">${fromNow}</td>
-							<td class="${delayCss}">${delayText}</td>
-							<td>${route}</td>
-							<td>${headsign}</td>
+						<td class="${delayCss}">${delayText}</td>
+						<td>${routeDisplay}</td>
+						<td>${patternDesc || headsign || patternDir}</td>
 							<td class="occupancy">${occupancy}</td>
 						</tr>`;
 			}).join('');
 
 					result.innerHTML = `
 						<table>
-							<thead><tr><th>Scheduled</th><th>Realtime</th><th>From now</th><th>Delay</th><th>Route</th><th>Direction</th><th>Occupancy</th></tr></thead>
+						<thead><tr><th>Scheduled</th><th>Realtime</th><th>From now</th><th>Delay</th><th>Line</th><th>Destination</th><th>Occupancy</th></tr></thead>
 							<tbody>${rows}</tbody>
 						</table>
 					`;
