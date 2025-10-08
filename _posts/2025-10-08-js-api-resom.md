@@ -32,12 +32,20 @@ Date:
 	 <meta charset="utf-8" />
 	 <meta name="viewport" content="width=device-width,initial-scale=1" />
 	 <title>Reso M — Grenoble Transport Explorer</title>
-	 <style>
+		<style>
 		 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; margin: 24px; color:#111 }
 		 h1 { font-size: 20px }
 		 .box { max-width:720px; padding:16px; border:1px solid #eee; border-radius:8px; background:#fafafa }
 		 label, select, button { display:block; margin-top:8px }
 		 pre { background:#111; color:#eee; padding:10px; border-radius:6px; overflow:auto }
+		 table { width:100%; border-collapse: collapse; margin-top:8px }
+		 th, td { text-align:left; padding:8px; border-bottom:1px solid #eee; vertical-align:middle }
+		 th { background:#fafafa; font-weight:600 }
+		 small.timeLabel { color:#666; display:block }
+		 .delay-good { color: #0a0; font-weight:600 }
+		 .delay-warning { color: #b65; font-weight:600 }
+		 .delay-bad { color: #c00; font-weight:700 }
+		 .occupancy { font-size:90%; color:#333 }
 	 </style>
  </head>
  <body>
@@ -161,52 +169,63 @@ Date:
 				return;
 			}
 
-		 // Build a small HTML table of upcoming times
-			const rows = data.slice(0, 20).map(item => {
-				// Each item usually contains fields like serviceDay, scheduledArrival, realtimeArrival
-				// The API encodes times as seconds since midnight in 'scheduledArrival' and 'realtimeArrival'
-				// and 'serviceDay' is the epoch seconds for the service day's midnight. To get a JS Date,
-				// compute (serviceDay + arrivalSeconds) * 1000.
+			// Build a small HTML table of upcoming times with clear columns
+			function formatDelaySeconds(d) {
+				if (d === 0) return 'On time';
+				const sign = d > 0 ? '+' : '-';
+				const abs = Math.abs(d);
+				const m = Math.floor(abs / 60);
+				const s = abs % 60;
+				return sign + (m > 0 ? `${m}m${s}s` : `${s}s`);
+			}
+
+			function delayClass(d) {
+				if (d <= 0) return 'delay-good';
+				if (d <= 120) return 'delay-warning';
+				return 'delay-bad';
+			}
+
+			const rows = data.slice(0, 50).map(item => {
 				const sd = Number(item.serviceDay) || 0;
-				const scheduledSec = Number(item.scheduledArrival) || null;
-				const realtimeSec = Number(item.realtimeArrival) || null;
+				const scheduledSec = typeof item.scheduledArrival !== 'undefined' ? Number(item.scheduledArrival) : null;
+				const realtimeSec = typeof item.realtimeArrival !== 'undefined' ? Number(item.realtimeArrival) : null;
 
 				function toTimeString(sec) {
-					if (!sec && sec !== 0) return 'n/a';
-					const ms = (sd + sec) * 1000;
-					return new Date(ms).toLocaleTimeString();
+					if (sec === null || typeof sec === 'undefined') return 'n/a';
+					return new Date((sd + sec) * 1000).toLocaleTimeString();
 				}
 
 				const scheduledTime = scheduledSec !== null ? toTimeString(scheduledSec) : 'n/a';
 				const realtimeTime = realtimeSec !== null ? toTimeString(realtimeSec) : 'n/a';
 
-				// compute delay in seconds when both values exist
-				let delay = '';
+				let delayText = '';
+				let delayCss = '';
 				if (scheduledSec !== null && realtimeSec !== null) {
-					const d = realtimeSec - scheduledSec; // seconds
-					if (d === 0) delay = 'On time';
-					else if (d > 0) delay = `+${d}s`;
-					else delay = `${d}s`;
+					const d = realtimeSec - scheduledSec;
+					delayText = formatDelaySeconds(d);
+					delayCss = delayClass(d);
 				}
 
 				const route = item.route || (item.trip && item.trip.routeId) || '';
 				const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
-				const realtimeFlag = item.realtime ? 'Yes' : 'No';
+				const occupancy = item.occupancy || (item.occupancyId ? `lvl:${item.occupancyId}` : '') || '';
 
 				return `<tr>
-					<td>${scheduledTime}<br><small>${realtimeTime}</small></td>
+					<td><div><small class="timeLabel">Scheduled</small><strong>${scheduledTime}</strong></div></td>
+					<td><div><small class="timeLabel">Realtime</small><strong>${realtimeTime}</strong></div></td>
+					<td class="${delayCss}">${delayText}</td>
 					<td>${route}</td>
 					<td>${headsign}</td>
-					<td>${realtimeFlag}${delay ? '<br><small>' + delay + '</small>' : ''}</td>
+					<td class="occupancy">${occupancy}</td>
 				</tr>`;
 			}).join('');
 
-		 result.innerHTML = `
-			 <table border="0" cellpadding="6" cellspacing="0">
-				 <thead><tr><th>Time</th><th>Route</th><th>Direction</th><th>Realtime</th></tr></thead>
-				 <tbody>${rows}</tbody>
-			 </table>
-		 `;
+			result.innerHTML = `
+				<table>
+					<thead><tr><th>Scheduled</th><th>Realtime</th><th>Delay</th><th>Route</th><th>Direction</th><th>Occupancy</th></tr></thead>
+					<tbody>${rows}</tbody>
+				</table>
+			`;
 	 }
 
 	 // Event wiring
