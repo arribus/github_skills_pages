@@ -3,9 +3,11 @@ const fetch = require('node-fetch');
 const dotenv = require('dotenv');
 
 dotenv.config();
-const API_KEY = process.env.API_KEY;
-if (!API_KEY) {
-  console.error('Missing API_KEY in environment. Set API_KEY or create a .env file.');
+// API key configuration
+// Put your API key here (get it at https://openapi.radiofrance.fr) or set it in your environment as API_KEY
+const API_KEY = process.env.API_KEY || 'PUT_YOUR_API_KEY_HERE';
+if (!API_KEY || API_KEY === 'PUT_YOUR_API_KEY_HERE') {
+  console.error('Missing API_KEY. Set API_KEY in your environment or replace the placeholder in scripts/radiofrance_cli.js');
   process.exit(1);
 }
 
