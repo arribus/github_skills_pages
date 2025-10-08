@@ -106,6 +106,8 @@ Date:
 	 // 1) Load lines and populate the lines select
 		 // We'll fetch routes once, then build grouped structures by mode -> type -> routes
 		 let routesByMode = {}; // { mode: { type: [route, ...] } }
+		 // interval handle for live "From now" updates
+		 let fromNowInterval = null;
 
 		 async function loadLines() {
 			 modesSelect.innerHTML = '';
@@ -266,13 +268,22 @@ Date:
 					return 'now';
 				}
 
-				const rows = data.slice(0, 50).map(item => {
+					// Sort entries by their computed arrival timestamp (serviceDay + arrival seconds)
+					data.sort((a,b) => {
+						const aSd = Number(a.serviceDay) || 0;
+						const bSd = Number(b.serviceDay) || 0;
+						const aArr = (typeof a.realtimeArrival !== 'undefined' ? Number(a.realtimeArrival) : Number(a.scheduledArrival)) || 0;
+						const bArr = (typeof b.realtimeArrival !== 'undefined' ? Number(b.realtimeArrival) : Number(b.scheduledArrival)) || 0;
+						return (aSd + aArr) - (bSd + bArr);
+					});
+
+					const rows = data.slice(0, 50).map(item => {
 				const sd = Number(item.serviceDay) || 0;
 				const scheduledSec = typeof item.scheduledArrival !== 'undefined' ? Number(item.scheduledArrival) : null;
 				const realtimeSec = typeof item.realtimeArrival !== 'undefined' ? Number(item.realtimeArrival) : null;
 					const arrivalSec = realtimeSec !== null ? realtimeSec : scheduledSec;
 					const nowMs = Date.now();
-					const arrivalMs = (arrivalSec !== null) ? (sd + arrivalSec) * 1000 : null;
+					const arrivalMs = (arrivalSec !== null) ? Math.round((Number(sd) + Number(arrivalSec)) * 1000) : null;
 					const fromNow = (arrivalMs !== null) ? formatFromNow(arrivalMs - nowMs) : 'n/a';
 
 				function toTimeString(sec) {
@@ -298,7 +309,7 @@ Date:
 						return `<tr>
 							<td><div><small class="timeLabel">Scheduled</small><strong>${scheduledTime}</strong></div></td>
 							<td><div><small class="timeLabel">Realtime</small><strong>${realtimeTime}</strong></div></td>
-							<td>${fromNow}</td>
+						<td class="fromNow" data-arrival-ms="${arrivalMs}">${fromNow}</td>
 							<td class="${delayCss}">${delayText}</td>
 							<td>${route}</td>
 							<td>${headsign}</td>
@@ -312,6 +323,22 @@ Date:
 							<tbody>${rows}</tbody>
 						</table>
 					`;
+
+							// Live-update the "From now" column every second using the stored data-arrival-ms
+							function refreshFromNow() {
+							const now = Date.now();
+							document.querySelectorAll('.fromNow').forEach(td => {
+								const a = td.getAttribute('data-arrival-ms');
+								if (!a) return;
+								const arrival = Number(a);
+								if (!arrival) return;
+								td.textContent = formatFromNow(arrival - now);
+							});
+						}
+						// Call immediately and every second
+						refreshFromNow();
+							if (fromNowInterval) clearInterval(fromNowInterval);
+							fromNowInterval = setInterval(refreshFromNow, 1000);
 	 }
 
 	 // Event wiring
