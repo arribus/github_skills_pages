@@ -1,0 +1,225 @@
+---
+Title: Query, using javascript, the API of reso M, the public transportation of Grenoble
+Date:
+---
+ 
+ This short post shows a very simple, beginner-friendly HTML + JavaScript example that queries the public transport API used by Grenoble (Reso M) to:
+
+ 1. List available lines
+ 2. Let the user pick a line
+ 3. List stops for that line
+ 4. Let the user pick a stop
+ 5. Show next scheduled real-time stoptimes for that stop and line
+
+ The example is intentionally small, clean and well-commented so someone new to programming can follow it.
+
+ ## How this works (quick)
+
+ - We use fetch() to call the public API at data.mobilites-m.fr. No API key is required for the routes and stops endpoints.
+ - The realtime stoptimes endpoint requires an Origin header. When you run the example from a browser served by a local HTTP server, the browser will set an Origin header automatically. If you open the file with the file:// scheme, some requests may be blocked.
+ - Keep the code simple: plain HTML, small CSS, and readable JavaScript with comments.
+
+ ## Copy-paste example (save as index.html and serve it)
+
+ Below is a single-file example. Save it as index.html in a folder and serve it with a simple static server (for example: VS Code Live Server, Python -m http.server, or any static server). Then open the page in your browser.
+
+ <!-- Example HTML file -->
+
+ <html lang="en">
+ <head>
+	 <meta charset="utf-8" />
+	 <meta name="viewport" content="width=device-width,initial-scale=1" />
+	 <title>Reso M — Grenoble Transport Explorer</title>
+	 <style>
+		 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; margin: 24px; color:#111 }
+		 h1 { font-size: 20px }
+		 .box { max-width:720px; padding:16px; border:1px solid #eee; border-radius:8px; background:#fafafa }
+		 label, select, button { display:block; margin-top:8px }
+		 pre { background:#111; color:#eee; padding:10px; border-radius:6px; overflow:auto }
+	 </style>
+ </head>
+ <body>
+	 <div class="box">
+		 <h1>Reso M — Grenoble Transport Explorer</h1>
+		 <p>A tiny, beginner-friendly demo that lists lines, stops and next realtime times.</p>
+
+		 <div>
+			 <label for="lines">1) Choose a line</label>
+			 <select id="lines"><option value="">Loading lines…</option></select>
+		 </div>
+
+		 <div>
+			 <label for="stops">2) Choose a stop</label>
+			 <select id="stops" disabled><option value="">Select a line first</option></select>
+		 </div>
+
+		 <div>
+			 <button id="showTimes" disabled>3) Show next times</button>
+		 </div>
+
+		 <h3>Results</h3>
+		 <div id="result">Make selections above to see results.</div>
+	 </div>
+
+	 <script>
+	 // Small helper to set innerText safely
+	 const el = id => document.getElementById(id);
+
+	 // Base URL for the Reso M API
+	 const BASE = 'https://data.mobilites-m.fr/api/routers/default/index';
+
+	 // DOM elements
+	 const linesSelect = el('lines');
+	 const stopsSelect = el('stops');
+	 const showBtn = el('showTimes');
+	 const result = el('result');
+
+	 // Populate an option element
+	 function addOption(select, value, text) {
+		 const opt = document.createElement('option');
+		 opt.value = value;
+		 opt.textContent = text;
+		 select.appendChild(opt);
+	 }
+
+	 // Fetch JSON with error handling
+	 async function fetchJson(url, options = {}) {
+		 try {
+			 const r = await fetch(url, options);
+			 if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+			 return await r.json();
+		 } catch (err) {
+			 console.error('Fetch error', err, url);
+			 throw err;
+		 }
+	 }
+
+	 // 1) Load lines and populate the lines select
+	 async function loadLines() {
+		 linesSelect.innerHTML = '';
+		 addOption(linesSelect, '', 'Choose a line');
+		 result.textContent = 'Loading lines…';
+
+		 const url = `${BASE}/routes`;
+		 const data = await fetchJson(url);
+
+		 // API returns an array of route objects. We'll use id/code and shortName or longName to display.
+		 data.sort((a,b) => (a.shortName||a.id||'').localeCompare(b.shortName||b.id||''));
+		 data.forEach(route => {
+			 const display = route.shortName ? `${route.shortName} — ${route.longName || ''}`.trim() : (route.id || '');
+			 addOption(linesSelect, route.id, display);
+		 });
+
+		 result.textContent = 'Lines loaded. Pick a line.';
+	 }
+
+	 // 2) When a line is picked, load stops for that line
+	 async function loadStopsForLine(lineId) {
+		 stopsSelect.innerHTML = '';
+		 addOption(stopsSelect, '', 'Loading stops…');
+		 stopsSelect.disabled = true;
+		 showBtn.disabled = true;
+		 result.textContent = 'Loading stops…';
+
+		 const encoded = encodeURIComponent(lineId);
+		 const url = `${BASE}/routes/${encoded}/stops`;
+		 const data = await fetchJson(url);
+
+		 stopsSelect.innerHTML = '';
+		 addOption(stopsSelect, '', 'Choose a stop');
+		 // The API returns stops — each has id and name
+		 data.forEach(s => {
+			 addOption(stopsSelect, s.id, `${s.name} (${s.id})`);
+		 });
+
+		 stopsSelect.disabled = false;
+		 result.textContent = 'Stops loaded. Pick a stop.';
+	 }
+
+	 // 3) Fetch stoptimes for a stop (optionally filtered by route)
+	 async function loadStoptimes(stopId, routeId) {
+		 result.textContent = 'Loading next times…';
+		 // Note: the API requires an Origin header when called from a non-browser environment; browsers set it automatically.
+		 // We'll pass the route as a query param to filter results for the chosen line.
+		 const params = routeId ? `?route=${encodeURIComponent(routeId)}` : '';
+		 const url = `${BASE}/stops/${encodeURIComponent(stopId)}/stoptimes${params}`;
+
+		 // For modern browsers fetch will include Origin header automatically. We don't need to manually add it.
+		 const data = await fetchJson(url);
+
+		 if (!Array.isArray(data) || data.length === 0) {
+			 result.innerHTML = '<em>No upcoming times found.</em>';
+			 return;
+		 }
+
+		 // Build a small HTML table of upcoming times
+		 const rows = data.slice(0, 20).map(item => {
+			 // Each item usually contains trip, route, stoptimes array; adapt to what's returned
+			 const time = item.arrival ? new Date(item.arrival).toLocaleTimeString() : (item.time || 'n/a');
+			 const route = item.route || (item.trip && item.trip.routeId) || '';
+			 const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
+			 const realtime = item.realtime ? 'Yes' : 'No';
+			 return `<tr><td>${time}</td><td>${route}</td><td>${headsign}</td><td>${realtime}</td></tr>`;
+		 }).join('');
+
+		 result.innerHTML = `
+			 <table border="0" cellpadding="6" cellspacing="0">
+				 <thead><tr><th>Time</th><th>Route</th><th>Direction</th><th>Realtime</th></tr></thead>
+				 <tbody>${rows}</tbody>
+			 </table>
+		 `;
+	 }
+
+	 // Event wiring
+	 linesSelect.addEventListener('change', async () => {
+		 const line = linesSelect.value;
+		 if (!line) {
+			 stopsSelect.innerHTML = '';
+			 addOption(stopsSelect, '', 'Select a line first');
+			 stopsSelect.disabled = true;
+			 showBtn.disabled = true;
+			 result.textContent = 'Pick a line.';
+			 return;
+		 }
+		 await loadStopsForLine(line);
+	 });
+
+	 stopsSelect.addEventListener('change', () => {
+		 showBtn.disabled = !stopsSelect.value;
+	 });
+
+	 showBtn.addEventListener('click', async () => {
+		 const stop = stopsSelect.value;
+		 const route = linesSelect.value;
+		 if (!stop) return;
+		 await loadStoptimes(stop, route);
+	 });
+
+	 // Start by loading lines on page load
+	 loadLines().catch(err => {
+		 result.textContent = 'Failed to load lines — open console for details.';
+	 });
+	 </script>
+ </body>
+ </html>
+
+ ## Notes and best practices
+
+ - Run this from a local HTTP server so the browser sends a proper Origin header. If you use VS Code Live Server or run `python -m http.server` it will work fine.
+ - Keep UI and data logic separated for larger apps. This tiny demo mixes them for clarity.
+ - Handle network errors gracefully in production; add loading states and retries where necessary.
+
+ ## Quick try (Windows PowerShell)
+
+ Option 1 — Python (if installed):
+
+ ```powershell
+ cd path\to\folder; python -m http.server 8000
+ ```
+
+ Then open http://localhost:8000 in your browser.
+
+ Option 2 — VS Code Live Server: right click index.html -> Open with Live Server.
+
+ That's it — a tiny interactive example for Reso M (Grenoble). If you want, I can also extract the JavaScript into a separate file, add TypeScript types, or make a Node CLI version.
+
