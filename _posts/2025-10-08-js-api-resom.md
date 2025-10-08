@@ -153,14 +153,44 @@ Date:
 		 }
 
 		 // Build a small HTML table of upcoming times
-		 const rows = data.slice(0, 20).map(item => {
-			 // Each item usually contains trip, route, stoptimes array; adapt to what's returned
-			 const time = item.arrival ? new Date(item.arrival).toLocaleTimeString() : (item.time || 'n/a');
-			 const route = item.route || (item.trip && item.trip.routeId) || '';
-			 const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
-			 const realtime = item.realtime ? 'Yes' : 'No';
-			 return `<tr><td>${time}</td><td>${route}</td><td>${headsign}</td><td>${realtime}</td></tr>`;
-		 }).join('');
+			const rows = data.slice(0, 20).map(item => {
+				// Each item usually contains fields like serviceDay, scheduledArrival, realtimeArrival
+				// The API encodes times as seconds since midnight in 'scheduledArrival' and 'realtimeArrival'
+				// and 'serviceDay' is the epoch seconds for the service day's midnight. To get a JS Date,
+				// compute (serviceDay + arrivalSeconds) * 1000.
+				const sd = Number(item.serviceDay) || 0;
+				const scheduledSec = Number(item.scheduledArrival) || null;
+				const realtimeSec = Number(item.realtimeArrival) || null;
+
+				function toTimeString(sec) {
+					if (!sec && sec !== 0) return 'n/a';
+					const ms = (sd + sec) * 1000;
+					return new Date(ms).toLocaleTimeString();
+				}
+
+				const scheduledTime = scheduledSec !== null ? toTimeString(scheduledSec) : 'n/a';
+				const realtimeTime = realtimeSec !== null ? toTimeString(realtimeSec) : 'n/a';
+
+				// compute delay in seconds when both values exist
+				let delay = '';
+				if (scheduledSec !== null && realtimeSec !== null) {
+					const d = realtimeSec - scheduledSec; // seconds
+					if (d === 0) delay = 'On time';
+					else if (d > 0) delay = `+${d}s`;
+					else delay = `${d}s`;
+				}
+
+				const route = item.route || (item.trip && item.trip.routeId) || '';
+				const headsign = item.headsign || (item.trip && item.trip.headsign) || '';
+				const realtimeFlag = item.realtime ? 'Yes' : 'No';
+
+				return `<tr>
+					<td>${scheduledTime}<br><small>${realtimeTime}</small></td>
+					<td>${route}</td>
+					<td>${headsign}</td>
+					<td>${realtimeFlag}${delay ? '<br><small>' + delay + '</small>' : ''}</td>
+				</tr>`;
+			}).join('');
 
 		 result.innerHTML = `
 			 <table border="0" cellpadding="6" cellspacing="0">
