@@ -1,0 +1,69 @@
+---
+Title: use the OpenWeatherMap API to fetch weather data for a specific location
+Date: 2025-10-08
+---
+
+<p>
+  <label for="apiKey">OpenWeatherMap API key:</label>
+  <input id="apiKey" placeholder="Insert your API key here" />
+</p>
+<p>
+  <label for="city">City:</label>
+  <input id="city" placeholder="Insert a city" />
+  <button id="fetch-weather">Get weather</button>
+</p>
+
+<div id="weather-output" aria-live="polite"></div>
+
+<script>
+  (function () {
+    const apiKeyInput = document.getElementById('apiKey');
+    const cityInput = document.getElementById('city');
+    const fetchBtn = document.getElementById('fetch-weather');
+    const outputElement = document.getElementById('weather-output');
+
+    async function fetchWeather() {
+      const apiKey = apiKeyInput.value.trim();
+      const city = cityInput.value.trim();
+
+      if (!apiKey) {
+        outputElement.textContent = 'Please provide an OpenWeatherMap API key.';
+        return;
+      }
+      if (!city) {
+        outputElement.textContent = 'Please enter a city name.';
+        return;
+      }
+
+      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${encodeURIComponent(apiKey)}&units=metric`;
+
+      outputElement.textContent = 'Loading...';
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          if (response.status === 404) {
+            outputElement.textContent = 'City not found. Please check the name.';
+          } else {
+            outputElement.textContent = `Error: ${response.status} ${response.statusText}`;
+          }
+          return;
+        }
+
+        const data = await response.json();
+        const temperature = data.main?.temp;
+        const description = data.weather?.[0]?.description;
+        const location = data.name;
+
+        outputElement.innerHTML = `<p>Temperature in ${location}: ${temperature}°C</p>` +
+                                  `<p>Weather: ${description}</p>`;
+      } catch (err) {
+        console.error(err);
+        outputElement.textContent = 'Network error, see console for details.';
+      }
+    }
+
+    fetchBtn.addEventListener('click', fetchWeather);
+    cityInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') fetchWeather(); });
+  })();
+</script>
