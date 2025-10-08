@@ -13,7 +13,7 @@ exports.handler = async function (event, context) {
   }
 
   // API key configuration
-  // Put your API key here (get it at https://openapi.radiofrance.fr) or set it in Netlify environment variables as API_KEY
+  // Put your API key here (get it at https://openapi.radiofrance.fr) or set it in environment variables as API_KEY
   const API_KEY = process.env.API_KEY || 'PUT_YOUR_API_KEY_HERE';
   if (!API_KEY || API_KEY === 'PUT_YOUR_API_KEY_HERE') {
     return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'API_KEY not configured. Set process.env.API_KEY or replace the placeholder in this file.' }) };
