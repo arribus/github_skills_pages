@@ -2,28 +2,6 @@
 Title: Query, using javascript, the API of reso M, the public transportation of Grenoble
 Date:
 ---
- 
- This short post shows a very simple, beginner-friendly HTML + JavaScript example that queries the public transport API used by Grenoble (Reso M) to:
-
- 1. List available lines
- 2. Let the user pick a line
- 3. List stops for that line
- 4. Let the user pick a stop
- 5. Show next scheduled real-time stoptimes for that stop and line
-
- The example is intentionally small, clean and well-commented so someone new to programming can follow it.
-
- ## How this works (quick)
-
- - We use fetch() to call the public API at data.mobilites-m.fr. No API key is required for the routes and stops endpoints.
- - The realtime stoptimes endpoint requires an Origin header. Two common ways to satisfy this are:
-	 - Run the HTML page in a browser served over HTTP (the browser automatically adds an Origin header). Opening the file with the file:// scheme may not send the header and can cause the request to be blocked.
-	 - Call the API from a server-side script (for example Node.js with axios) and set an Origin header manually. Browsers do not allow client-side scripts to set the Origin header — it's controlled by the browser for security reasons.
- - Keep the code simple: plain HTML, small CSS, and readable JavaScript with comments.
-
- ## Copy-paste example (save as index.html and serve it)
-
- Below is a single-file example. Save it as index.html in a folder and serve it with a simple static server (for example: VS Code Live Server, Python -m http.server, or any static server). Then open the page in your browser.
 
  <!-- Example HTML file -->
 
@@ -339,62 +317,4 @@ Date:
 	 </script>
  </body>
  </html>
-
- ## Notes and best practices
-
- - Run this from a local HTTP server so the browser sends a proper Origin header. If you use VS Code Live Server or run `python -m http.server` it will work fine.
- - Keep UI and data logic separated for larger apps. This tiny demo mixes them for clarity.
- - Handle network errors gracefully in production; add loading states and retries where necessary.
-
-### Server-side example (Node.js + axios)
-
-If you prefer to fetch the realtime stoptimes from a server (or want to set the Origin header yourself), here's a tiny Node.js example using axios. This is useful for scripts, proxies, or when the browser's CORS restrictions get in the way.
-
-```js
-// install: npm install axios
-const axios = require('axios');
-
-async function getStoptimes(stopCode, routeCode) {
-	const base = 'https://data.mobilites-m.fr/api/routers/default/index';
-	const url = `${base}/stops/${encodeURIComponent(stopCode)}/stoptimes?route=${encodeURIComponent(routeCode)}&showCancelledTrips=true`;
-
-	const res = await axios.get(url, {
-		headers: {
-			// the API expects an Origin header in some contexts; set one here from server-side
-			origin: 'mon_appli'
-		}
-	});
-
-	return res.data;
-}
-
-getStoptimes('SEM:4020', 'SEM:B').then(d => console.log(JSON.stringify(d, null, 2))).catch(e => console.error(e));
-```
-
-Example URL (browser request without header shown for clarity):
-
-```
-https://data.mobilites-m.fr/api/routers/default/index/stops/SEM:4020/stoptimes?route=SEM%3AB
-```
-
-If you want cancelled trips included, add `&showCancelledTrips=true` to the query string (as shown in the Node example).
-
-### Notes about headers and CORS
-
-- Browsers set the Origin header automatically and won't let JavaScript set it manually. If you see CORS errors in the browser console, consider calling the API from a small server-side proxy (like the Node example above), or run the page from a proper HTTP origin that the API accepts.
-- The Node.js example demonstrates how to set an Origin header when calling the API from a server environment.
-
- ## Quick try (Windows PowerShell)
-
- Option 1 — Python (if installed):
-
- ```powershell
- cd path\to\folder; python -m http.server 8000
- ```
-
- Then open http://localhost:8000 in your browser.
-
- Option 2 — VS Code Live Server: right click index.html -> Open with Live Server.
-
- That's it — a tiny interactive example for Reso M (Grenoble). If you want, I can also extract the JavaScript into a separate file, add TypeScript types, or make a Node CLI version.
 
